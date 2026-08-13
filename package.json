@@ -1,0 +1,30 @@
+{
+  "name": "projectpins-for-chatgpt",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Local-first browser extension that pins conversations inside individual ChatGPT Projects.",
+  "scripts": {
+    "dev": "wxt",
+    "prepare:wxt": "wxt prepare",
+    "compile": "wxt prepare && tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build": "wxt build",
+    "zip": "wxt zip",
+    "e2e": "playwright test",
+    "audit": "python tools/audit.py",
+    "check": "npm run compile && npm test && npm run build && npm run audit",
+    "postinstall": "wxt prepare"
+  },
+  "engines": {
+    "node": ">=22.4.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.0",
+    "linkedom": "^0.18.13",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10",
+    "wxt": "0.21.1"
+  }
+}

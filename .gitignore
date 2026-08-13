@@ -1,0 +1,14 @@
+node_modules/
+.output/
+.wxt/
+coverage/
+playwright-report/
+test-results/
+*.log
+.DS_Store
+Thumbs.db
+.env
+.env.*
+!.env.example
+dist/
+release/
