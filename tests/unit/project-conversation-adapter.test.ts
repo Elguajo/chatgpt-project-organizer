@@ -106,4 +106,16 @@ describe('ProjectConversationAdapter', () => {
     expect(adapter.listConversationRows(context!)[0]?.title).toBe('<img src=x onerror=alert(1)>');
     expect(context!.root.querySelector('img')).toBeNull();
   });
+
+  it('reads only the dedicated navigation title, never a conversation preview', () => {
+    const adapter = adapterForFixture('project-conversation-list-with-preview.html');
+    const context = adapter.resolveContext();
+
+    expect(adapter.listConversationRows(context!)).toMatchObject([
+      {
+        conversationKey: '00000000-0000-4000-8000-000000000021',
+        title: 'Chat with preview',
+      },
+    ]);
+  });
 });

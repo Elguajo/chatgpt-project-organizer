@@ -1,0 +1,159 @@
+.projectpins-pinned-section {
+  margin: 0.75rem 0 1rem;
+}
+
+.projectpins-heading {
+  margin: 0 0 0.5rem;
+  font: inherit;
+  font-weight: 600;
+}
+
+.projectpins-pinned-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 0.625rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.projectpins-pinned-card {
+  position: relative;
+  display: grid;
+  aspect-ratio: 0.84;
+  overflow: hidden;
+  border: 1px solid rgba(127, 127, 127, 0.35);
+  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  border-radius: 0.875rem;
+  background: rgba(127, 127, 127, 0.12);
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  box-shadow: 0 1px 0 color-mix(in srgb, currentColor 7%, transparent);
+}
+
+.projectpins-pinned-card::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0.25rem;
+  background: linear-gradient(180deg, #7593ff, #ad7dff);
+  content: '';
+}
+
+.projectpins-pinned-link {
+  display: grid;
+  align-content: space-between;
+  min-width: 0;
+  min-height: 100%;
+  padding: 1rem 3.25rem 1rem 1.125rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.projectpins-pinned-link:hover {
+  background: color-mix(in srgb, currentColor 5%, transparent);
+}
+
+.projectpins-pinned-link:focus-visible {
+  z-index: 1;
+  outline: 2px solid currentColor;
+  outline-offset: -3px;
+}
+
+.projectpins-card-kicker {
+  color: color-mix(in srgb, currentColor 66%, transparent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.projectpins-card-title {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.projectpins-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: 2rem;
+  border: 0;
+  border-radius: 0.375rem;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+
+.projectpins-control:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+/* The adapter mounts this before ChatGPT's own overflow action, at the right edge. */
+.projectpins-control[data-projectpins-native-control] {
+  justify-content: center;
+  width: 2rem;
+  min-width: 2rem;
+  padding: 0;
+}
+
+.projectpins-card-unpin {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 2;
+  justify-content: center;
+  width: 2rem;
+  min-height: 2rem;
+  padding: 0;
+  border: 1px solid rgba(127, 127, 127, 0.35);
+  border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+  border-radius: 999px;
+  background: rgba(127, 127, 127, 0.16);
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.projectpins-card-unpin:hover {
+  background: color-mix(in srgb, currentColor 20%, transparent);
+}
+
+.projectpins-pin-icon {
+  width: 1em;
+  height: 1em;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  [data-projectpins-decorated] .projectpins-control[data-projectpins-native-control] {
+    pointer-events: none;
+    opacity: 0;
+  }
+
+  [data-projectpins-decorated]:hover .projectpins-control[data-projectpins-native-control],
+  [data-projectpins-decorated]:focus-within .projectpins-control[data-projectpins-native-control] {
+    pointer-events: auto;
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .projectpins-control[data-projectpins-native-control] {
+    transition: opacity 120ms ease-out;
+  }
+}
+
+@media (max-width: 40rem) {
+  .projectpins-pinned-list {
+    grid-template-columns: 1fr;
+  }
+
+  .projectpins-pinned-card {
+    min-height: 8.5rem;
+    aspect-ratio: auto;
+  }
+}

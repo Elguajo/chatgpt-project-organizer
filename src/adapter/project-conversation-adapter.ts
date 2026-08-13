@@ -169,7 +169,7 @@ export class ProjectConversationAdapter implements ChatGptDomAdapter {
       return null;
     }
 
-    const title = anchor.textContent?.trim();
+    const title = this.readConversationTitle(anchor);
     if (!title) {
       this.diagnose('PP_ADAPTER_PROFILE_MISMATCH');
       return null;
@@ -201,6 +201,30 @@ export class ProjectConversationAdapter implements ChatGptDomAdapter {
     return CHATGPT_SELECTOR_PROFILE.conversationLinks.flatMap((selector) =>
       [...root.querySelectorAll<HTMLAnchorElement>(selector)],
     );
+  }
+
+  /**
+   * Conversation rows may contain a message-preview sibling. Read only the
+   * dedicated title element in that verified layout; never flatten link text.
+   */
+  private readConversationTitle(anchor: HTMLAnchorElement): string | null {
+    if (anchor.childElementCount === 0) {
+      return anchor.textContent?.trim() || null;
+    }
+
+    const content = anchor.firstElementChild;
+    const titleContainer = content?.firstElementChild;
+    const titleElement = titleContainer?.firstElementChild;
+    const isVerifiedPreviewLayout =
+      anchor.childElementCount === 1 &&
+      content?.tagName === 'DIV' &&
+      titleContainer?.tagName === 'DIV' &&
+      titleElement?.tagName === 'DIV' &&
+      titleContainer.children.length >= 2 &&
+      titleElement.childElementCount === 0;
+    if (!isVerifiedPreviewLayout || !titleElement) return null;
+
+    return titleElement.textContent?.trim() || null;
   }
 
   private locationHref(): string {
