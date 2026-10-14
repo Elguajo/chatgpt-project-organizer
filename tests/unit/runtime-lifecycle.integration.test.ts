@@ -4,20 +4,20 @@ import { describe, expect, it } from 'vitest';
 import type { ChatGptDomAdapter, ConversationRow, ProjectContext } from '../../src/adapter/contracts';
 import { ProjectPinsRuntime } from '../../src/bootstrap';
 import { ProjectPinController } from '../../src/core/pin-controller';
-import { createEmptyState, type ProjectPinsStateV1 } from '../../src/core/model';
+import { createEmptyState, type ProjectPinsState } from '../../src/core/model';
 import type { ProjectPinsRepository } from '../../src/storage/repository';
 
 const projectA = 'g-p-00000000000000000000000000000000-project-a';
 const projectB = 'g-p-00000000000000000000000000000000-project-b';
 
 class MemoryRepository implements ProjectPinsRepository {
-  state: ProjectPinsStateV1 = createEmptyState();
+  state: ProjectPinsState = createEmptyState();
 
-  async readState(): Promise<ProjectPinsStateV1> {
+  async readState(): Promise<ProjectPinsState> {
     return structuredClone(this.state);
   }
 
-  async writeState(state: ProjectPinsStateV1): Promise<void> {
+  async writeState(state: ProjectPinsState): Promise<void> {
     this.state = structuredClone(state);
   }
 }

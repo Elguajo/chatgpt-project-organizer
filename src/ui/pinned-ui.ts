@@ -33,6 +33,7 @@ export function microcopyForDocument(document: Document): ProjectPinsMicrocopy {
  * while interaction and persistence stay in the runtime/controller.
  */
 export class PinnedUiRenderer {
+  private readonly signatures = new WeakMap<HTMLElement, string>();
   constructor(private readonly document: Document = globalThis.document) {}
 
   render(
@@ -43,15 +44,27 @@ export class PinnedUiRenderer {
   ): void {
     const pinnedKeys = new Set(pins.map((pin) => pin.conversationKey));
     this.decorateRows(rows, pinnedKeys);
+    this.renderChatsHeading(context);
 
-    if (pins.length === 0) {
-      this.removePinnedSections(mountPoint);
-      return;
+    const activeRows = new Set(rows.map(row => row.element));
+    for (const element of this.document.querySelectorAll<HTMLElement>('[data-projectpins-decorated]')) {
+      if (!activeRows.has(element)) {
+        element.querySelector('[data-projectpins-native-control]')?.remove();
+        delete element.dataset.projectpinsDecorated;
+        delete element.dataset.projectpinsHidden;
+      }
     }
 
     const root = this.singlePinnedSection(mountPoint);
     root.dataset.projectpinsProjectKey = context.projectKey;
-    root.replaceChildren(this.createPinnedContent(pins));
+    const signature = JSON.stringify([context.projectKey, this.document.documentElement.lang, pins]);
+    if (this.signatures.get(root) !== signature) {
+      root.replaceChildren(this.createPinnedContent(pins));
+      this.signatures.set(root, signature);
+    }
+    // Hide only after synthetic navigation exists. Rendering failure leaves
+    // the native row available, and unpin restores the same native node.
+    this.suppressDuplicates(rows, pinnedKeys);
   }
 
   /** Removes extension-owned controls and containers, leaving native DOM intact. */
@@ -67,6 +80,31 @@ export class PinnedUiRenderer {
     for (const row of this.document.querySelectorAll<HTMLElement>('[data-projectpins-decorated]')) {
       delete row.dataset.projectpinsDecorated;
     }
+    for (const row of this.document.querySelectorAll<HTMLElement>('[data-projectpins-hidden]')) delete row.dataset.projectpinsHidden;
+    for (const heading of this.document.querySelectorAll('[data-projectpins-chats-heading]')) heading.remove();
+  }
+
+  private suppressDuplicates(rows: ConversationRow[], pinnedKeys: ReadonlySet<string>): void {
+    for (const row of rows) {
+      if (pinnedKeys.has(row.conversationKey)) row.element.dataset.projectpinsHidden = 'true';
+      else delete row.element.dataset.projectpinsHidden;
+    }
+  }
+
+  private renderChatsHeading(context: ProjectContext): void {
+    const list = context.conversationList;
+    if (!list?.parentElement) return;
+    const parent = list.parentElement;
+    let heading = [...parent.children].find(child => child.hasAttribute('data-projectpins-chats-heading')) as HTMLElement | undefined;
+    if (!heading) {
+      heading = this.document.createElement('h2');
+      heading.dataset.projectpinsChatsHeading = 'true';
+      heading.dataset.projectpinsOwned = 'heading';
+      heading.className = 'projectpins-heading';
+    }
+    const text = this.document.documentElement.lang.toLowerCase().startsWith('ru') ? 'Чаты' : 'Chats';
+    if (heading.textContent !== text) heading.textContent = text;
+    if (list.previousElementSibling !== heading) list.before(heading);
   }
 
   private decorateRows(rows: ConversationRow[], pinnedKeys: ReadonlySet<string>): void {
@@ -79,7 +117,7 @@ export class PinnedUiRenderer {
       control.dataset.projectpinsConversationKey = row.conversationKey;
       control.setAttribute('aria-label', isPinned ? copy.unpinChat : copy.pinChat);
       control.setAttribute('aria-pressed', String(isPinned));
-      control.replaceChildren(this.createPinIcon());
+      if (!control.firstChild) control.append(this.createPinIcon());
     }
   }
 
@@ -91,12 +129,6 @@ export class PinnedUiRenderer {
       mountPoint.prepend(root);
     }
     return root;
-  }
-
-  private removePinnedSections(mountPoint: HTMLElement): void {
-    for (const root of this.extensionChildren(mountPoint, 'data-projectpins-root')) {
-      root.remove();
-    }
   }
 
   private extensionChildren(mountPoint: HTMLElement, attribute: string): HTMLElement[] {
@@ -129,13 +161,10 @@ export class PinnedUiRenderer {
       const link = this.document.createElement('a');
       link.className = 'projectpins-pinned-link';
       link.href = pin.href;
-      const kicker = this.document.createElement('span');
-      kicker.className = 'projectpins-card-kicker';
-      kicker.textContent = copy.openChat;
       const title = this.document.createElement('span');
       title.className = 'projectpins-card-title';
       title.textContent = pin.title;
-      link.append(kicker, title);
+      link.append(title);
 
       const control = this.createControl(false);
       control.classList.add('projectpins-card-unpin');
@@ -145,7 +174,10 @@ export class PinnedUiRenderer {
       control.setAttribute('aria-pressed', 'true');
       control.replaceChildren(this.createPinIcon());
 
-      item.append(link, control);
+      const actions = this.document.createElement('div');
+      actions.className = 'projectpins-pinned-actions';
+      actions.append(control);
+      item.append(link, actions);
       list.append(item);
     }
 
@@ -161,7 +193,7 @@ export class PinnedUiRenderer {
     for (const duplicate of controls) duplicate.remove();
     // Keep ProjectPins before ChatGPT's overflow menu so both controls retain
     // independent hit targets in the row's existing right-side action area.
-    actionMount.prepend(control);
+    if (actionMount.firstElementChild !== control) actionMount.prepend(control);
     return control;
   }
 

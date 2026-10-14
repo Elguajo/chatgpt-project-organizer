@@ -5,20 +5,20 @@ import { ProjectConversationAdapter } from '../../src/adapter/project-conversati
 import type { ChatGptDomAdapter, ProjectContext } from '../../src/adapter/contracts';
 import { ProjectPinsRuntime } from '../../src/bootstrap';
 import { ProjectPinController } from '../../src/core/pin-controller';
-import { createEmptyState, type ProjectPinsStateV1 } from '../../src/core/model';
+import { createEmptyState, type ProjectPinsState } from '../../src/core/model';
 import type { ProjectPinsRepository } from '../../src/storage/repository';
 
 const projectKey = 'g-p-00000000000000000000000000000000-test-project';
 const projectLocation = `https://chatgpt.com/g/${projectKey}/project`;
 
 class MemoryRepository implements ProjectPinsRepository {
-  state: ProjectPinsStateV1 = createEmptyState();
+  state: ProjectPinsState = createEmptyState();
 
-  async readState(): Promise<ProjectPinsStateV1> {
+  async readState(): Promise<ProjectPinsState> {
     return structuredClone(this.state);
   }
 
-  async writeState(state: ProjectPinsStateV1): Promise<void> {
+  async writeState(state: ProjectPinsState): Promise<void> {
     this.state = structuredClone(state);
   }
 }
@@ -94,12 +94,14 @@ describe('Pinned UI integration', () => {
     runtime.stop();
   });
 
-  it('hides the Pinned section with zero pins and adds one accessible control per recognized row', async () => {
+  it('keeps an empty Pinned section with zero pins and adds one accessible control per recognized row', async () => {
     const { document, runtime } = runtimeForFixture();
     runtime.start();
     await settleUi(runtime);
 
-    expect(document.querySelector('[data-projectpins-root]')).toBeNull();
+    expect(document.querySelector('[data-projectpins-root]')).not.toBeNull();
+    expect(document.querySelector('[data-projectpins-root] h2')?.textContent).toBe('Pinned');
+    expect(document.querySelectorAll('[data-projectpins-root] li')).toHaveLength(0);
     const controls = document.querySelectorAll<HTMLButtonElement>('[data-projectpins-native-control]');
     expect(controls).toHaveLength(2);
     expect([...controls].map((control) => control.getAttribute('aria-pressed'))).toEqual([
@@ -137,7 +139,7 @@ describe('Pinned UI integration', () => {
       'true',
     );
     expect(section?.querySelectorAll('.projectpins-pinned-card')).toHaveLength(1);
-    expect(section?.querySelector('.projectpins-card-kicker')?.textContent).toBe('Open chat');
+    expect(section?.querySelector('.projectpins-card-kicker')).toBeNull();
     expect(section?.querySelector<HTMLButtonElement>('.projectpins-card-unpin')?.textContent).toBe('');
     expect(section?.querySelector<HTMLButtonElement>('.projectpins-card-unpin')?.getAttribute('aria-label')).toBe(
       'Unpin chat',
@@ -147,7 +149,8 @@ describe('Pinned UI integration', () => {
     click(document, section!.querySelector<HTMLButtonElement>('[data-projectpins-action="unpin"]')!);
     await settleUi(runtime);
 
-    expect(document.querySelector('[data-projectpins-root]')).toBeNull();
+    expect(document.querySelector('[data-projectpins-root]')).not.toBeNull();
+    expect(document.querySelectorAll('[data-projectpins-root] li')).toHaveLength(0);
     expect(nativeList.firstElementChild).toBe(firstNativeRow);
     expect(repository.state.projects[projectKey]?.pins).toEqual([]);
   });

@@ -1,61 +1,49 @@
 # Next Session
 
 Status: IN PROGRESS
+Current phase: Phase 05 — Automated and authenticated-browser QA.
+Current build: 0.1.2 in .output/chrome-mv3.
 
-Current phase: Phase 05 - Automated and authenticated-browser QA
+## Implemented and verified — 2026-10-14
 
-Completed phase in last handoff: Phase 04 - SPA resilience, accessibility and privacy hardening
+Current ChatGPT DOM support and stable rendering are fixed. Implemented named
+colored tags, separate title color, v1 migration preserving pins, contextual
+editor, native-style Pinned rows, local version/status, serialized writes and
+cross-tab refresh. User asked to remove Manage Chats, hide native duplicates
+reversibly, add Chats heading and retain Pinned with an empty list. These are
+implemented in 0.1.2. Increment version for each updated user-delivered build.
 
-## Objective
+48 Vitest tests, 1 synthetic Edge browser test, TypeScript/build and audit pass.
+0.1.1 authenticated checks passed: pin/reload/open/unpin, appearance persistence,
+multiple tags, two-Project isolation and two-tab refresh. Current-session test
+changes were restored to baseline. Precise evidence and remaining checks:
+docs/research/QA_2026-10-14.md. No real chat content or DOM dumps recorded.
 
-Verify the production build against the current live ChatGPT UI and capture
-concise release-QA evidence without committing private chat data.
+## Remaining acceptance
 
-## Verified evidence (2026-08-13)
+0.1.2 is installed and live duplicate hiding, Chats and no Manage Chats are
+confirmed. Empty Pinned is browser-test verified; live empty state remains open.
+Browser restart, actual disable/re-enable, live rename/theme changes,
+repeated SPA navigation and DevTools extension-request inspection still need
+release evidence. Do not declare Phase 05 complete based only on fixtures.
+The browser tool cannot open edge://extensions: automatic security policy blocks
+non-http(s) URLs. User must reload/update the existing unpacked extension there;
+do not bypass this using another tool or shell automation.
 
-- `npm run check` passed after running compile, 38 Vitest tests, the production
-  Chrome MV3 build, and `python3 tools/audit.py`.
-- Generated `.output/chrome-mv3/manifest.json` contains only the `storage`
-  permission and the `https://chatgpt.com/*` content-script match; no host,
-  network, or privileged permission drift was found.
-- Source and production-bundle inspection found no production `fetch`, XHR,
-  WebSocket, EventSource, or remote-script usage.
+## Ready-to-copy next-session prompt
 
-## External blocker
+Read AGENTS.md and follow the Default Read Set from docs/system/TOKEN_EFFICIENCY.md.
+Continue Phase 05 selected by ROADMAP. Read docs/research/QA_2026-10-14.md.
 
-Edge is connected for live inspection. It currently has the WXT development
-package loaded from `.output/chrome-mv3-dev`, not the production package from
-`.output/chrome-mv3`; after switching to production, the controls rendered but
-their click did not reach the document-delegated handler. A direct fallback on
-extension-owned controls has been added and verified by regression test. Reload
-the production extension and refresh the same non-sensitive Project before
-retesting. Then continue authenticated QA: two-Project pin flows, restart
-persistence, title refresh, SPA/BFCache, theme and hover layout checks,
-disable/re-enable teardown, and DevTools Network inspection. No private
-ChatGPT data was read or recorded.
+Verify the current 0.1.2 production build on the authorized test Projects, without
+reading messages or capturing private screenshots. Confirm reversible duplicate
+hiding, visible Chats, empty Pinned, tags and separate title colors. Complete
+remaining release QA: restart, disable/re-enable, live title rename, themes, SPA
+and Network. Make ordinary engineering decisions autonomously, add sanitized
+regressions for actual failures, and increment the extension version for any
+updated delivered build. Match ChatGPT styling; do not reintroduce Manage Chats.
 
-## Read first
-
-Follow `AGENTS.md` and the Default Read Set. The current phase is:
-
-`docs/phases/05-test-release-qa.md`
-
-## Important constraint
-
-Do not implement folders, tags, search, backend, sync, telemetry, private OpenAI API calls, or extra permissions. Keep native ChatGPT rows in place and render only extension-owned UI. Do not collect or commit real conversation content, screenshots, account data, or DOM dumps.
-
-## NEXT SESSION PROMPT
-
-Read `AGENTS.md` and follow the Default Read Set from `docs/system/TOKEN_EFFICIENCY.md`.
-
-Continue the current roadmap phase: `docs/phases/05-test-release-qa.md`.
-
-Tasks:
-1. read Phase 05 and `docs/product/TEST_MATRIX.md`;
-2. in Edge, reload the ProjectPins extension loaded from the exact `.output/chrome-mv3` directory, refresh the test Project, and retry Pin; the new build includes a direct handler fallback for ChatGPT-intercepted row clicks;
-3. use two test Projects to verify Pin -> reload -> open -> unpin, Project isolation, browser restart persistence, title refresh, repeated SPA navigation, light/dark, and disable/re-enable;
-4. inspect DevTools network and generated manifest for extension-originated requests and permission drift;
-5. if live DOM differs, update only the adapter and add a sanitized fixture;
-6. record concise QA evidence without real titles, prompts, account data, or screenshots containing private chats.
-
-At handoff, update ROADMAP and NEXT_SESSION. Preserve native row position, project isolation, safe adapter failure behavior, and the no-message-body privacy rule. If authenticated live QA cannot be completed, leave Phase 05 in progress and state the external blocker.
+Keep local-first MV3, chatgpt.com-only host, project isolation, no backend,
+telemetry, message-body reads, internal APIs or network interception. Native
+nodes stay in place; only recognized pinned duplicates receive reversible CSS.
+Update ROADMAP/NEXT_SESSION with evidence, blockers and a ready next prompt.

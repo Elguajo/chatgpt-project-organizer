@@ -1,17 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { ProjectPinController } from '../../src/core/pin-controller';
-import { createEmptyState, type ProjectPinsStateV1 } from '../../src/core/model';
+import { createEmptyState, type ProjectPinsState } from '../../src/core/model';
 import type { ProjectPinsRepository } from '../../src/storage/repository';
 
 class MemoryRepository implements ProjectPinsRepository {
-  state: ProjectPinsStateV1 = createEmptyState();
+  state: ProjectPinsState = createEmptyState();
   writes = 0;
 
-  async readState(): Promise<ProjectPinsStateV1> {
+  async readState(): Promise<ProjectPinsState> {
     return structuredClone(this.state);
   }
 
-  async writeState(state: ProjectPinsStateV1): Promise<void> {
+  async writeState(state: ProjectPinsState): Promise<void> {
     this.writes += 1;
     this.state = structuredClone(state);
   }
@@ -92,7 +92,7 @@ describe('ProjectPinController', () => {
   it('surfaces a failed write without replacing state visible through the controller', async () => {
     const repository = new MemoryRepository();
     await repository.writeState({
-      schemaVersion: 1,
+      schemaVersion: 2,
       projects: {
         [projectA]: {
           pins: [

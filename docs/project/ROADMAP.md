@@ -22,11 +22,16 @@ Exactly one phase is `[>]` until all phases are complete.
 
 ## Current phase handoff
 
-As of 2026-08-13, automated Phase 05 checks and generated-manifest inspection
-pass. Edge is connected. A production-package test showed ChatGPT intercepting
-the document-delegated Pin click even though the controls render; a direct
-extension-control fallback is now built and covered by a regression test. Reload
-the production package and retest before the phase can progress.
+As of 2026-10-14, implementation and partial authenticated QA are verified;
+Phase 05 remains IN PROGRESS pending the remaining release checklist. Current
+build is 0.1.2: current DOM support, stable reconciliation, contextual tags/title
+colors, compact Pinned rows, reversible native duplicate suppression, Chats
+heading and persistent empty Pinned section. Manage Chats was removed by user
+request. Version 0.1.1 live flows passed in two Projects and two tabs; 0.1.2 live
+inspection confirmed duplicate hiding and the Chats heading. Empty Pinned is
+verified in the synthetic browser test. Automated
+checks pass (48 unit/integration tests plus 1 synthetic browser test, TypeScript,
+build/audit). See `docs/research/QA_2026-10-14.md` for precise evidence and gaps.
 
 ## MVP completion definition
 
@@ -42,4 +47,7 @@ The project is MVP complete when:
 
 ## Post-MVP
 
-Folders, manual drag ordering, tags/colors, search and optional sync are tracked only as future ideas. They are not silently pulled into these phases.
+Colored tags and colored chat titles were explicitly requested on 2026-10-14.
+The change request is recorded in `docs/research/EXTENSION_COMPARISON_2026-10-14.md`;
+implementation is included in current Phase 05 under the approved change request.
+Folders, manual drag ordering, search and sync remain future ideas.

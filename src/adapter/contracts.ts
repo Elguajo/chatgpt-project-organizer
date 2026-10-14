@@ -5,6 +5,7 @@ export interface ProjectContext {
   projectHref?: string;
   projectTitle?: string;
   root: HTMLElement;
+  conversationList?: HTMLElement;
 }
 
 export interface ConversationRow {
@@ -13,10 +14,14 @@ export interface ConversationRow {
   title: string;
   element: HTMLElement;
   actionMount: HTMLElement;
+  titleElement?: HTMLElement;
+  metadataMount?: HTMLElement;
 }
 
 export interface ChatGptDomAdapter {
   resolveContext(): ProjectContext | null;
   findPinnedMountPoint(context: ProjectContext): HTMLElement | null;
   listConversationRows(context: ProjectContext): ConversationRow[];
+  status?(): string;
+  isDarkTheme?(): boolean;
 }

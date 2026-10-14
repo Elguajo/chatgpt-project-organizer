@@ -15,13 +15,14 @@ PINNED
   [pin] Important chat 1
   [pin] Important chat 2
 
-All chats
+Chats
   Chat A                      [pin button on hover/focus]
   Chat B                      [pin button on hover/focus]
-  Important chat 1            [pinned state]
 ```
 
-The native chat remains in its original native position. MVP accepts this duplicate navigation presence.
+The native node stays in its original position but recognized pinned duplicates
+are suppressed by reversible extension-owned CSS. Unpin or adapter failure
+restores the original row. This behavior was explicitly approved on 2026-10-14.
 
 ## Pin flow
 
@@ -31,6 +32,7 @@ The native chat remains in its original native position. MVP accepts this duplic
 4. Storage updates.
 5. `Pinned` section updates immediately.
 6. Native row Pin control changes to pressed/pinned state.
+7. Its duplicate native row is hidden after the synthetic link is rendered.
 
 No toast is required for successful pinning unless usability testing shows ambiguity.
 
@@ -44,7 +46,7 @@ User may unpin from:
 After unpin:
 
 - synthetic row disappears;
-- native row remains;
+- original native row becomes visible again in the same position;
 - storage updates once.
 
 ## Open flow
@@ -55,12 +57,21 @@ The extension does not intercept or proxy the conversation content.
 
 ## Empty state
 
-When zero pins exist, do not render a large empty panel. Either:
+Keep the Pinned heading with an empty list when zero pins exist in a recognized
+Project. Below it, Chats labels the native list. No large panel or onboarding
+hint. This replaces the initial hide-empty behavior at the user's request.
 
-- hide the Pinned section entirely; preferred for MVP; or
-- render a one-line hint only during an optional onboarding state.
+## Tags and title color
 
-Default: hide.
+The tag icon beside a native or synthetic row opens a contextual editor. Multiple
+named tags have individual palette colors; title color is independent. Save,
+Cancel, Remove tag and Reset title color are keyboard accessible. Tags appear
+below the title in native and synthetic rows where the title target is verified.
+No Manage Chats list. Appearance persists even after unpinning.
+
+Use native-style typography, spacing, subdued hover surfaces and compact action
+icons. The local status displays the extension version, updated for each
+delivered build. Data and diagnostics stay local.
 
 ## Loading state
 

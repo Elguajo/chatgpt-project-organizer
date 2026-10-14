@@ -63,7 +63,11 @@ Benefits:
 - allows pinned entries to remain visible even if the native list is virtualized/lazy;
 - makes extension teardown simple.
 
-Native pinned conversations may therefore also remain in their normal location. Duplicate navigation presence is acceptable for MVP.
+Approved 2026-10-14 user change: suppress the duplicate native row only after a
+synthetic pinned link exists, using reversible extension-owned CSS attributes.
+Native nodes are never removed/moved. Unpin, context loss and teardown clear the
+attributes; unknown rows are never hidden. Add an owned Chats heading before the
+verified native list. This replaces the former always-visible duplicate policy.
 
 ## Reconciliation lifecycle
 
@@ -92,16 +96,43 @@ DOM node identity is not state.
 
 ## Storage model
 
+2026-10-14 approved extension: schema v2 adds optional per-project `annotations`
+keyed by conversation ID, containing named colored tags and independent title
+color. Keep the existing root key for explicit v1 -> v2 migration and old-version
+fail-closed protection. A v1 read migrates in memory; the next successful edit
+persists v2. Pin operations preserve annotations, including unpinned chats.
+Mutations are serialized per controller. Same-origin Web Locks serialize tabs
+when available with a five-second acquisition timeout; storage change events
+refresh other tabs. Simultaneous multi-tab editing still needs release evidence.
+
+The owned contextual appearance dialog edits tags/title color from an action
+beside a recognized native row or synthetic pin. The redundant Manage Chats
+panel was removed by user request. Native tag chips mount into a verified
+metadata target; the adapter ignores extension-owned children when validating
+the original structure. A small separate status
+surface may explain missing project/list recognition, but cannot expose chat
+actions without context. No message content appears in diagnostics.
+
+Adapter rows expose an optional verified `titleElement`; appearance code only
+adds/removes extension-owned color attributes there. Native text/styles are not
+rewritten. Scoped CSS supports the observed root theme convention via an adapter
+theme query. Tag controls and chips belong entirely to the extension.
+
+Rendering must reach quiescence: preserve unchanged nodes and focused editor
+inputs; filter own mutation records, retain native-removal detection, and reject
+async results if project/root changed while storage was pending.
+
 Root key: `projectpins.state.v1`
 
 Conceptual structure:
 
 ```ts
 type ProjectPinsState = {
-  schemaVersion: 1;
+  schemaVersion: 2;
   projects: Record<ProjectKey, {
     pins: PinnedConversation[];
     updatedAt: number;
+    annotations?: Record<string, { tags: { name: string; color: string }[]; titleColor: string | null }>;
   }>;
 };
 

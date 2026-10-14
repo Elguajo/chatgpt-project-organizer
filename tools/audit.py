@@ -6,6 +6,7 @@ from __future__ import annotations
 from pathlib import Path
 import re
 import sys
+import json
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -120,6 +121,27 @@ def main() -> int:
         if "https://chatgpt.com/*" not in text:
             fail(errors, "content script is not scoped to https://chatgpt.com/*")
 
+    package = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
+    lock = json.loads((ROOT / "package-lock.json").read_text(encoding="utf-8"))
+    version = package["version"]
+    if lock.get("version") != version or lock.get("packages", {}).get("", {}).get("version") != version:
+        fail(errors, "package and lockfile extension versions differ")
+    manifest_file = ROOT / ".output/chrome-mv3/manifest.json"
+    if manifest_file.exists():
+        manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
+        if manifest.get("version") != version:
+            fail(errors, "production manifest version differs; rebuild the extension")
+        if manifest.get("permissions") != ["storage"] or manifest.get("host_permissions"):
+            fail(errors, "production manifest permissions differ from approved scope")
+        scripts = manifest.get("content_scripts", [])
+        if len(scripts) != 1 or scripts[0].get("matches") != ["https://chatgpt.com/*"]:
+            fail(errors, "production content script host scope differs")
+
+    network_pattern = re.compile(r"\bfetch\s*\(|\bnew\s+(?:XMLHttpRequest|WebSocket|EventSource)\b")
+    for source in list((ROOT / "src").rglob("*.ts")) + list((ROOT / "entrypoints").rglob("*.ts")):
+        if network_pattern.search(source.read_text(encoding="utf-8")):
+            fail(errors, f"unapproved production network API in {source.relative_to(ROOT)}")
+
     if errors:
         print("AUDIT FAILED")
         for error in errors:
@@ -131,6 +153,8 @@ def main() -> int:
     print("- roadmap markers and phase references are consistent")
     print("- NEXT_SESSION points to the current phase")
     print("- no obvious forbidden MVP permissions detected")
+    print(f"- extension version {version} consistent across package, lockfile and available build")
+    print("- production source has no direct network API usage")
     return 0
 
 

@@ -69,6 +69,11 @@ Test:
 | Open Project 2 | Project 1 pins absent |
 | Return Project 1 | pins present |
 | Unpin | removed from synthetic section |
+| Pin recognized chat | synthetic row above, original native row remains in DOM but is hidden |
+| Unpin / adapter failure / teardown | original native row becomes visible again |
+| Zero pins in recognized Project | Pinned heading and empty list remain; Chats labels native list |
+| Appearance button | contextual editor opens; no Manage Chats block |
+| Extension update | version matches package, lockfile, manifest and local status |
 | ChatGPT re-renders list | UI returns without duplication |
 | Adapter cannot find project | no injected Project UI |
 | Adapter sees ambiguous row | no Pin control on that row |

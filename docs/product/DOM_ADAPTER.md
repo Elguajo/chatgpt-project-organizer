@@ -19,6 +19,16 @@ The adapter must not:
 
 ## Required semantic outputs
 
+Approved 2026-10-14: `ConversationRow.titleElement?: HTMLElement` exposes only the
+verified title target (never a preview/message container). `status()` may expose
+a safe diagnostic code; `isDarkTheme()` isolates host theme detection. Consumers
+must not query ChatGPT markup themselves. Reversible extension-owned color
+attributes on the verified title target are allowed; native text is unchanged.
+`ProjectContext.conversationList?: HTMLElement` exposes the verified list for
+an extension-owned Chats heading. User approved reversible CSS suppression of
+recognized pinned native rows on 2026-10-14; never remove/move native nodes and
+restore rows when recognition fails or the extension tears down.
+
 ```ts
 type ProjectContext = {
   projectKey: string;

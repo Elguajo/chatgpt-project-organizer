@@ -18,3 +18,7 @@
 - Keep storage schema versioned and migration-tested.
 - Add tests for negative/failure states, not only happy paths.
 - Any selector change caused by ChatGPT UI updates must include a sanitized regression fixture.
+- Increment package.json and package-lock.json extension version for each updated
+  user-delivered build; show the same version in the local status UI.
+- Match native ChatGPT styling; use contextual tag/color controls, not a redundant
+  Manage Chats list (user feedback 2026-10-14).

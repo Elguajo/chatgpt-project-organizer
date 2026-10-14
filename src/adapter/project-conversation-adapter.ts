@@ -29,6 +29,12 @@ type ProjectList = {
  * It is read-only: later phases own all extension DOM mutations.
  */
 export class ProjectConversationAdapter implements ChatGptDomAdapter {
+  private lastDiagnostic = 'PP_ADAPTER_NO_PROJECT';
+  status(): string { return this.lastDiagnostic; }
+  isDarkTheme(): boolean {
+    const root = this.document.documentElement;
+    return root.dataset.theme === 'dark' || root.classList.contains('dark');
+  }
   constructor(
     private readonly document: Document = globalThis.document,
     private readonly options: ProjectConversationAdapterOptions = {},
@@ -57,6 +63,7 @@ export class ProjectConversationAdapter implements ChatGptDomAdapter {
       projectKey: navigation.projectKey,
       projectHref: new URL(`/g/${navigation.projectKey}/project`, this.locationHref()).href,
       root: projectList.root,
+      conversationList: projectList.list,
     };
   }
 
@@ -157,19 +164,26 @@ export class ProjectConversationAdapter implements ChatGptDomAdapter {
     }
 
     const layout = anchor.parentElement;
-    const actionMount = anchor.nextElementSibling;
-    const validLayout =
+    let actionMount = anchor.nextElementSibling;
+    const legacyLayout =
       layout?.tagName === 'DIV' &&
       layout.parentElement === listItem &&
       listItem.children.length === 1 &&
       actionMount?.tagName === 'DIV' &&
       actionMount === layout.lastElementChild;
-    if (!validLayout || !layout || !actionMount) {
+    // Verified 2026-10-14: LI > A + DIV(SPAN date, DIV actions).
+    const currentLayout = layout === listItem && listItem.children.length === 2 &&
+      actionMount?.tagName === 'DIV' && actionMount.children.length === 2 &&
+      actionMount.firstElementChild?.tagName === 'SPAN' &&
+      actionMount.lastElementChild?.tagName === 'DIV';
+    if (currentLayout) actionMount = actionMount!.lastElementChild;
+    if ((!legacyLayout && !currentLayout) || !layout || !actionMount) {
       this.diagnose('PP_ADAPTER_PROFILE_MISMATCH');
       return null;
     }
 
-    const title = this.readConversationTitle(anchor);
+    const titleElement = this.readConversationTitleElement(anchor, currentLayout);
+    const title = titleElement?.textContent?.trim();
     if (!title) {
       this.diagnose('PP_ADAPTER_PROFILE_MISMATCH');
       return null;
@@ -181,6 +195,9 @@ export class ProjectConversationAdapter implements ChatGptDomAdapter {
       title,
       element: listItem as HTMLElement,
       actionMount: actionMount as HTMLElement,
+      titleElement: titleElement!,
+      ...(titleElement !== anchor && titleElement?.parentElement
+        ? { metadataMount: titleElement.parentElement } : {}),
     };
   }
 
@@ -207,12 +224,18 @@ export class ProjectConversationAdapter implements ChatGptDomAdapter {
    * Conversation rows may contain a message-preview sibling. Read only the
    * dedicated title element in that verified layout; never flatten link text.
    */
-  private readConversationTitle(anchor: HTMLAnchorElement): string | null {
+  private readConversationTitleElement(anchor: HTMLAnchorElement, currentLayout: boolean): HTMLElement | null {
     if (anchor.childElementCount === 0) {
-      return anchor.textContent?.trim() || null;
+      return anchor;
     }
 
     const content = anchor.firstElementChild;
+    const nativeChildren = content ? [...content.children].filter(child => !child.hasAttribute('data-projectpins-owned')) : [];
+    if (currentLayout && anchor.childElementCount === 1 && content?.tagName === 'DIV' &&
+        nativeChildren.length === 2 && nativeChildren.every(child => child.tagName === 'DIV') &&
+        content.firstElementChild?.childElementCount === 0) {
+      return content.firstElementChild as HTMLElement;
+    }
     const titleContainer = content?.firstElementChild;
     const titleElement = titleContainer?.firstElementChild;
     const isVerifiedPreviewLayout =
@@ -224,7 +247,7 @@ export class ProjectConversationAdapter implements ChatGptDomAdapter {
       titleElement.childElementCount === 0;
     if (!isVerifiedPreviewLayout || !titleElement) return null;
 
-    return titleElement.textContent?.trim() || null;
+    return titleElement as HTMLElement;
   }
 
   private locationHref(): string {
@@ -232,6 +255,7 @@ export class ProjectConversationAdapter implements ChatGptDomAdapter {
   }
 
   private diagnose(code: AdapterDiagnosticCode): void {
+    this.lastDiagnostic = code;
     this.options.onDiagnostic?.(code);
   }
 }

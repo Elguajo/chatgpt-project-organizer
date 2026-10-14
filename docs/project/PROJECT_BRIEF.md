@@ -8,7 +8,17 @@
 
 ## Selected direction
 
-Build the narrow extension first. It solves one concrete navigation problem with minimal permissions and no backend. Folder/tag/search features remain future work.
+Build a narrow project-scoped organizer with minimal permissions and no backend.
+The approved 2026-10-14 scope includes pins, colored tags, colored chat titles,
+contextual controls on chat rows and actionable local status messages. Per user
+feedback, do not show a Manage Chats list. Match native ChatGPT typography, row
+spacing and colors. Increment extension version for each updated delivered build
+and display that version in local status.
+
+2026-10-14 change request: colored tags and colored chat titles are now an
+explicitly approved addition alongside core pin repair. See
+`docs/research/EXTENSION_COMPARISON_2026-10-14.md`. Existing MVP acceptance and
+privacy constraints remain in force; folders/search/sync are not requested.
 
 ## Desired outcome
 
@@ -48,7 +58,10 @@ A user with many conversations in a ChatGPT Project can keep a few important con
 ## Explicit constraints
 
 - Do not physically reorder native React-managed conversation nodes in MVP.
-- Do not hide native chat rows merely because they are pinned.
+- Approved 2026-10-14: hide only confidently recognized pinned rows using an
+  extension-owned CSS attribute. Restore them on unpin, teardown or recognition
+  failure. Keep native nodes in place and label the remaining list Chats.
+- Keep the Pinned heading and an empty list when a recognized Project has no pins.
 - Do not inject into unrelated domains.
 - Do not request `<all_urls>`, cookies, webRequest, history, or tabs permissions.
 - Do not add folders/tags/search/sync to MVP without a change request.
@@ -63,7 +76,7 @@ A user with many conversations in a ChatGPT Project can keep a few important con
 ## Out of scope for first release
 
 - folders and nested folders;
-- tags/colors;
+- folders/search/sync remain excluded; tags/colors are approved for this release;
 - global ChatGPT chat organization;
 - full-text chat search;
 - cross-device sync;

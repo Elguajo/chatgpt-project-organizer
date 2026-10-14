@@ -2,6 +2,23 @@
 
 Status: VERIFIED — sanitized live observation
 
+## 2026-10-14 update
+
+Verified on authorized ChatGPT Project views in Edge: the current list is
+`main ... section > ol` without `aria-busy`; rows are `li > a + div`. The anchor
+contains one div with two div children: title first, preview second. Only title
+text is read. The trailing row div has a date span and a nested div containing
+native actions. Root `data-theme="dark"` is observed. Routes still expose
+project-qualified conversation navigation. Use the October sanitized fixture.
+No real URLs, titles, previews, account fields or message bodies are recorded.
+
+Version 0.1.1 live checks: native pin, contextual appearance editing, multiple
+tags, independent title color, reload persistence, opening pinned link, unpin,
+two-Project isolation and storage-change updates between tabs passed. Synthetic
+browser QA separately verifies keyboard focus, light/dark color behavior and
+teardown. Version 0.1.2 adds reversible duplicate suppression, Chats heading and
+an always-present empty Pinned section; see the current QA evidence note.
+
 This file must be completed during Phase 00 using a logged-in, non-sensitive test Project.
 
 ## Test date

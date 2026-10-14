@@ -2,8 +2,11 @@ import type {
   ConversationKey,
   PinnedConversation,
   ProjectKey,
-  ProjectPinsStateV1,
+  ProjectPinsState,
+  ChatAppearance,
+  ProjectPinBucket,
 } from './model';
+import { parseAppearance } from '../storage/repository';
 import type { ProjectPinsRepository } from '../storage/repository';
 
 /** Navigation metadata supplied by the adapter; it deliberately excludes chat content. */
@@ -26,10 +29,36 @@ export class PinControllerInputError extends Error {
  * visible state.
  */
 export class ProjectPinController {
+  private mutationTail: Promise<unknown> = Promise.resolve();
   constructor(
     private readonly repository: ProjectPinsRepository,
     private readonly now: () => number = Date.now,
   ) {}
+
+  async project(projectKey: ProjectKey): Promise<ProjectPinBucket> {
+    assertKey(projectKey, 'Project key');
+    const state = await this.repository.readState();
+    return structuredClone(state.projects[projectKey] ?? { pins: [], updatedAt: 0 });
+  }
+
+  setAppearance(projectKey: ProjectKey, conversationKey: ConversationKey, appearance: ChatAppearance): Promise<void> {
+    return this.mutate(() => this.setAppearanceOnce(projectKey, conversationKey, appearance));
+  }
+
+  private async setAppearanceOnce(projectKey: ProjectKey, conversationKey: ConversationKey, appearance: ChatAppearance): Promise<void> {
+    assertKey(projectKey, 'Project key');
+    assertKey(conversationKey, 'Conversation key');
+    const value = parseAppearance(appearance);
+    const state = await this.repository.readState();
+    const bucket = state.projects[projectKey] ?? { pins: [], updatedAt: 0 };
+    const annotations = { ...bucket.annotations };
+    if (value.tags.length === 0 && value.titleColor === null) delete annotations[conversationKey];
+    else annotations[conversationKey] = value;
+    if (JSON.stringify(bucket.annotations ?? {}) === JSON.stringify(annotations)) return;
+    await this.repository.writeState({ ...state, projects: { ...state.projects,
+      [projectKey]: { ...bucket, annotations, updatedAt: timestampFrom(this.now()) },
+    } });
+  }
 
   async list(projectKey: ProjectKey): Promise<PinnedConversation[]> {
     assertKey(projectKey, 'Project key');
@@ -37,7 +66,11 @@ export class ProjectPinController {
     return sortedPins(state.projects[projectKey]?.pins ?? []);
   }
 
-  async pin(projectKey: ProjectKey, conversation: PinConversationInput): Promise<PinnedConversation[]> {
+  pin(projectKey: ProjectKey, conversation: PinConversationInput): Promise<PinnedConversation[]> {
+    return this.mutate(() => this.pinOnce(projectKey, conversation));
+  }
+
+  private async pinOnce(projectKey: ProjectKey, conversation: PinConversationInput): Promise<PinnedConversation[]> {
     assertKey(projectKey, 'Project key');
     assertConversationInput(conversation);
 
@@ -66,7 +99,11 @@ export class ProjectPinController {
     return sortedPins(nextPins);
   }
 
-  async unpin(projectKey: ProjectKey, conversationKey: ConversationKey): Promise<PinnedConversation[]> {
+  unpin(projectKey: ProjectKey, conversationKey: ConversationKey): Promise<PinnedConversation[]> {
+    return this.mutate(() => this.unpinOnce(projectKey, conversationKey));
+  }
+
+  private async unpinOnce(projectKey: ProjectKey, conversationKey: ConversationKey): Promise<PinnedConversation[]> {
     assertKey(projectKey, 'Project key');
     assertKey(conversationKey, 'Conversation key');
 
@@ -84,7 +121,11 @@ export class ProjectPinController {
     return sortedPins(resequencedPins);
   }
 
-  async refreshTitle(
+  refreshTitle(projectKey: ProjectKey, conversationKey: ConversationKey, title: string): Promise<PinnedConversation[]> {
+    return this.mutate(() => this.refreshTitleOnce(projectKey, conversationKey, title));
+  }
+
+  private async refreshTitleOnce(
     projectKey: ProjectKey,
     conversationKey: ConversationKey,
     title: string,
@@ -108,19 +149,30 @@ export class ProjectPinController {
     await this.repository.writeState(nextState);
     return sortedPins(nextPins);
   }
+
+  private mutate<T>(operation: () => Promise<T>): Promise<T> {
+    const run = this.mutationTail.then(() => {
+      const locks = globalThis.navigator?.locks;
+      // Same-origin tabs share this lock; no data is placed in the lock name.
+      return locks ? locks.request('projectpins.state.write', { signal: AbortSignal.timeout(5000) }, operation) : operation();
+    });
+    this.mutationTail = run.catch(() => undefined);
+    return run;
+  }
 }
 
 function withProjectPins(
-  state: ProjectPinsStateV1,
+  state: ProjectPinsState,
   projectKey: ProjectKey,
   pins: PinnedConversation[],
   updatedAt: number,
-): ProjectPinsStateV1 {
+): ProjectPinsState {
   return {
     schemaVersion: state.schemaVersion,
     projects: {
       ...state.projects,
       [projectKey]: {
+        ...state.projects[projectKey],
         pins,
         updatedAt,
       },
@@ -146,7 +198,7 @@ function assertConversationInput(conversation: PinConversationInput): void {
 }
 
 function assertKey(value: string, label: string): void {
-  if (value.trim().length === 0) {
+  if (value.trim().length === 0 || ['__proto__', 'constructor', 'prototype'].includes(value)) {
     throw new PinControllerInputError(`${label} must not be blank.`);
   }
 }

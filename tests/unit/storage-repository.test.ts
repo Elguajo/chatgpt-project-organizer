@@ -3,7 +3,7 @@ import {
   LocalProjectPinsRepository,
   type ExtensionLocalStorageArea,
 } from '../../src/storage/repository';
-import { STORAGE_KEY, type ProjectPinsStateV1 } from '../../src/core/model';
+import { STORAGE_KEY, type ProjectPinsState } from '../../src/core/model';
 
 class MemoryStorage implements ExtensionLocalStorageArea {
   value: unknown = undefined;
@@ -21,8 +21,8 @@ class MemoryStorage implements ExtensionLocalStorageArea {
   }
 }
 
-const validState: ProjectPinsStateV1 = {
-  schemaVersion: 1,
+const validState: ProjectPinsState = {
+  schemaVersion: 2,
   projects: {
     'project-a': {
       updatedAt: 100,
@@ -41,20 +41,20 @@ const validState: ProjectPinsStateV1 = {
 };
 
 describe('LocalProjectPinsRepository', () => {
-  it('reads an empty v1 state when no persisted value exists', async () => {
+  it('reads an empty v2 state when no persisted value exists', async () => {
     const repository = new LocalProjectPinsRepository(new MemoryStorage());
 
-    await expect(repository.readState()).resolves.toEqual({ schemaVersion: 1, projects: {} });
+    await expect(repository.readState()).resolves.toEqual({ schemaVersion: 2, projects: {} });
   });
 
-  it('persists only the schema-v1 navigation metadata shape', async () => {
+  it('persists only the schema-v2 navigation metadata shape', async () => {
     const storage = new MemoryStorage();
     const repository = new LocalProjectPinsRepository(storage);
 
     await repository.writeState(validState);
 
     expect(storage.value).toEqual(validState);
-    expect(Object.keys((storage.value as ProjectPinsStateV1).projects['project-a']!.pins[0]!)).toEqual([
+    expect(Object.keys((storage.value as ProjectPinsState).projects['project-a']!.pins[0]!)).toEqual([
       'conversationKey',
       'href',
       'title',
@@ -77,9 +77,9 @@ describe('LocalProjectPinsRepository', () => {
   });
 
   it.each([
-    [{ schemaVersion: 2, projects: {} }, 'PP_STORAGE_UNSUPPORTED_SCHEMA'],
+    [{ schemaVersion: 3, projects: {} }, 'PP_STORAGE_UNSUPPORTED_SCHEMA'],
     [{ schemaVersion: 0, projects: {} }, 'PP_STORAGE_UNSUPPORTED_SCHEMA'],
-    [{ schemaVersion: 1, projects: { 'project-a': { pins: [], updatedAt: -1 } } }, 'PP_STORAGE_CORRUPT_STATE'],
+    [{ schemaVersion: 2, projects: { 'project-a': { pins: [], updatedAt: -1 } } }, 'PP_STORAGE_CORRUPT_STATE'],
   ])('fails closed for incompatible or malformed stored state', async (value, code) => {
     const storage = new MemoryStorage();
     storage.value = value;
